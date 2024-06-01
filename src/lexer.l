@@ -1,9 +1,9 @@
 %{
-    #include "lexer.hpp"
     #include "parser.tab.hpp"
+    #include "lexer.hpp"
     
     #undef  YY_DECL
-    #define YY_DECL int FooLexer::yylex(LexVal *const yylval, yy::location *const yylloc)
+    #define YY_DECL int FooLexer::yylex(void *const yylval, yy::location *const yylloc)
 
     typedef yy::parser::token token;
 
@@ -40,7 +40,7 @@ return    return token::_RETURN_;
 
 \{\*.*\*\}
 
-[0-9]+                      { yylval->num_val = std::stoi(std::string(yytext, yytext + yyleng)); }       return token::NUMBER;
-[a-zA-Z][a-zA-Z0-9]*        { yylval->ident_val = std::string(yytext, yytext + yyleng); }                return token::IDENT;
+[0-9]+                  { ((ValueType*)yylval)->num_val = std::stoi(std::string(yytext, yytext + yyleng)); }       return token::NUMBER;
+[a-zA-Z][a-zA-Z0-9]*    { ((ValueType*)yylval)->ident_val = new std::string(yytext, yytext + yyleng); }                return token::IDENT;
 
 .   {return *yytext; }

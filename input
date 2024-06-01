@@ -1,1 +1,18 @@
-   Hello    sdrfsdfsdf  !
+func bar() {
+    foo();
+};
+
+func foo() {
+    a = (1 + b)/3 * 4 + fo();
+	return 2;
+};
+
+{* это комментарий! *}
+
+func main() {
+	foo();
+	bar();
+	return 0;
+};
+
+entry = main;

@@ -7,9 +7,8 @@
 #endif
 #include <location.hh>
 
-struct LexVal
-{
-    std::string ident_val;
+union ValueType {
+    std::string* ident_val;
     int num_val;
 };
 
@@ -24,5 +23,5 @@ private:
 
 public:
     FooLexer(std::istream &in, int env) : yyFlexLexer(&in), env(env) {};
-    int yylex(LexVal *const yylval, yy::location *const yylloc);
+    int yylex(void* const yylval, yy::location *const yylloc);
 };
