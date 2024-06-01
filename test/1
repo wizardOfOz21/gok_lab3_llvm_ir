@@ -10,6 +10,8 @@ func bar() {
 	return 1;
 };
 
+{* это комментарий! *}
+
 func main() {
 	foo();
 	bar();

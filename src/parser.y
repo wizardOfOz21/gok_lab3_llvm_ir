@@ -4,12 +4,13 @@
 %code requires {
     #include <string>
     #include "lexer.hpp"
+    #include "ast.hpp"
 }
 
 %locations
 
 %define api.value.type {LexVal}
-%parse-param {const bool debug}
+%parse-param {ProgramAST* &ast_root}
 
 %parse-param {FooLexer &lexer}
 
@@ -29,7 +30,7 @@
 
 %%
 
-program: decls ';'
+program: decls ';' { ast_root = (ProgramAST*)11; }
 decls: decls ';' decl | decl | %empty
 
 decl: var_decl | func_decl | entry_decl
