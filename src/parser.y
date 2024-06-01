@@ -7,6 +7,7 @@
 }
 
 %define api.value.type {std::string}
+%parse-param {const bool debug}
 
 %parse-param {FooLexer &lexer}
 
