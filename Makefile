@@ -22,25 +22,27 @@ main.o = ${BUILD_DIR}/main.o
 main.cpp = ${SRC_DIR}/main.cpp
 prog = ${BUILD_DIR}/prog
 
-lex.yy.cc: ${lexer.l}
+GCC_FLAGS = -w -Wc++11-extensions
+
+lexer_src: ${lexer.l}
 	flex -o ${lex.yy.cc} ${lexer.l}
 
-lex.yy.o: lex.yy.cc ${lexer.hpp} parser.tab.hpp
-	g++ -c ${lex.yy.cc} -I${INCLUDE_DIR} -I${BUILD_DIR} -o ${lex.yy.o}
-
-parser.tab.hpp parser.tab.cpp: ${parser.y}
+parser_src: ${parser.y}
 	bison -Wconflicts-sr -Wconflicts-rr -Wcounterexamples -H${parser.tab.hpp} -o${parser.tab.cpp} ${parser.y};
 
-parser.tab.o: parser.tab.cpp ${lexer.hpp}
-	g++ -c ${parser.tab.cpp} -I${INCLUDE_DIR} -I{BUILD_DIR} -o ${parser.tab.o}
+lex.yy.o:
+	g++ -c ${lex.yy.cc} -I${INCLUDE_DIR} -I${BUILD_DIR} -o ${lex.yy.o} ${GCC_FLAGS}
 
-main.o: ${main.cpp} ${lexer.hpp} parser.tab.hpp
-	g++ -c ${main.cpp} -I${INCLUDE_DIR} -I${BUILD_DIR} -o ${main.o}
+parser.tab.o:
+	g++ -c ${parser.tab.cpp} -I${INCLUDE_DIR} -I${BUILD_DIR} -o ${parser.tab.o} ${GCC_FLAGS}
+
+main.o:
+	g++ -c ${main.cpp} -I${INCLUDE_DIR} -I${BUILD_DIR} -o ${main.o} ${GCC_FLAGS}
 
 prog: main.o parser.tab.o lex.yy.o
 	g++ ${main.o} ${parser.tab.o} ${lex.yy.o} -o ${prog}
 
-build: mkdir prog
+build: mkdir parser_src lexer_src prog
 
 run: 
 	./${PROG} ${I}

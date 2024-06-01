@@ -6,7 +6,9 @@
     #include "lexer.hpp"
 }
 
-%define api.value.type {std::string}
+%locations
+
+%define api.value.type {LexVal}
 %parse-param {const bool debug}
 
 %parse-param {FooLexer &lexer}
@@ -17,16 +19,19 @@
     #define yylex lexer.yylex
 }
 
-%token HELLO
-%token WORLD
+%token IDENT
+%token NUMBER
+
+%token VAR
+%token FUNC
 
 %%
 
-hello_world: HELLO WORLD '!' { std::cout << "Goodbye " << $WORLD << '!' << std::endl; }
+program: IDENT {std::cout << $1.ident_val << std::endl;} | NUMBER | VAR | FUNC
 
 %%
 
-void yy::parser::error(const std::string &message)
+void yy::parser::error(const yy::location& loc, const std::string &message)
 {
-    std::cerr << "Error: " << message << std::endl;
+    std::cerr << "Error: " << message << " on " << loc << std::endl;
 }
