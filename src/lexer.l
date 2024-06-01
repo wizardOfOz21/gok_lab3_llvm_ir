@@ -34,10 +34,14 @@
 
 [\r\t\n ]+
 
-[Ff][Uu][Nn][Cc]     return token::FUNC;
-[Vv][Aa][Rr]         return token::VAR;
+func      return token::_FUNC_;
+var       return token::_VAR_;
+entry     return token::_ENTRY_;
+return    return token::_RETURN_;
 
 \{.*\}
 
 [0-9]+                      { yylval->num_val = std::stoi(std::string(yytext, yytext + yyleng)); }       return token::NUMBER;
 [a-zA-Z][a-zA-Z0-9]*        { yylval->ident_val = std::string(yytext, yytext + yyleng); }                 return token::IDENT;
+
+.   {return *yytext; }

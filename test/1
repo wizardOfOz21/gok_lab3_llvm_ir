@@ -1,1 +1,19 @@
-sdf 23432
+var a = 5, b = 6, c = 7;
+var d = 15;
+
+func foo() {
+    a = (1 + b)/3 * 4 + fo();
+	return 2;
+};
+
+func bar() {
+	return 1;
+};
+
+func main() {
+	foo();
+	bar();
+	return 0;
+};
+
+entry = main;
