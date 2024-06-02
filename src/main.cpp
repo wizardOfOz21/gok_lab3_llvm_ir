@@ -1,7 +1,7 @@
 #include "parser.tab.hpp"
 #include "lexer.hpp"
 #include "builder.hpp"
-#include "ast.hpp"
+#include "ast/program.hpp"
 #include <string>
 #include <fstream>
 

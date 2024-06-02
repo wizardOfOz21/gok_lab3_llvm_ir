@@ -8,19 +8,19 @@ LLVM_BIN_DIR    = $(shell brew --prefix llvm)/bin
 COMPILER		= clang++
 BISON_FLAGS		= -Wconflicts-sr -Wconflicts-rr -Wcounterexamples
 LLVM_FLAGS		= $(shell ${LLVM_BIN_DIR}/llvm-config --cxxflags --ldflags --system-libs --libs core)
-OTHER_FLAGS 	= -w -Wc++11-extensions -fcolor-diagnostics -fansi-escape-codes
+OTHER_FLAGS 	= -w -Wc++11-extensions -fcolor-diagnostics -fansi-escape-codes -Wdelete-incomplete
 
 FLEX_CPP		= build/src/lex.yy.cpp
 BISON_HPP		= build/include/parser.tab.hpp build/include/location.hpp
 BISON_CPP 		= build/src/parser.tab.cpp
 BASE_CPP 		= $(wildcard src/*.cpp)
-BASE_HPP		= $(wildcard include/*.hpp)
+BASE_HPP		= $(wildcard include/*.hpp) $(wildcard include/**/*.hpp)
 
 CPP 			= ${BASE_CPP} ${FLEX_CPP} ${BISON_CPP}
 HPP				= ${BASE_HPP} ${BASE_HPP}
 
 build/prog: ${CPP} ${HPP}
-	${COMPILER} -g -O3 ${LLVM_FLAGS} -I${INCLUDE_DIR} -I${AUTO_INCLUDE_DIR} ${CPP} -o build/prog
+	${COMPILER} -g -O3 ${LLVM_FLAGS} ${OTHER_FLAGS} -I${INCLUDE_DIR} -I${AUTO_INCLUDE_DIR} ${CPP} -o build/prog
 
 ${FLEX_CPP}: src/lexer.l
 	flex -o build/src/lex.yy.cpp $<
@@ -31,6 +31,9 @@ ${BISON_CPP} ${BISON_HPP}: src/parser.y
 
 run: build/prog
 	./build/prog ${I}
+
+print:
+	echo ${BASE_HPP}
 
 # make run I=test/1
 

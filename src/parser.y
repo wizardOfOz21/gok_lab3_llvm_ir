@@ -5,7 +5,7 @@
     #include "lexer.hpp"
 
     #include <string>
-    #include "ast.hpp"
+    #include "ast/program.hpp"
 }
 
 %locations
@@ -33,56 +33,26 @@
     std::string* ident_val;
     int num_val;
 
-    vector<DeclAST*>* decl_list;
+    vector<DeclAST*>* DeclAST_list;
+    DeclAST* DeclAST;
+    vector<OperatorAST*>* OperatorAST_list;
+    OperatorAST* OperatorAST;
 
-    vector<VarAST*>* var_decl_list;
-    VarAST* var_decl;
-
-    FuncAST* func_decl;
-
-    EntryAST* entry_decl;
-
-    vector<OperatorAST*>* op_list;
-
-    OperatorAST* op;
+    ExprAST* ExprAST;
 
     vector<string>* strings;
-
-    AssignStatementAST* assign;
-    ReturnStatementAST* return_;
-    ExprStatementAST* expr_stmt;
-    ExprAST* expr;
-
-    TermAST* term;
-    FactorAST* factor;
-    PAST* p;
 }
 
-%type <decl_list> decls
-%type <decl_list> decl
+%type <DeclAST_list> var_decl var_list decl decls
 
-%type <var_decl_list> var_decl
-%type <var_decl_list> var_list
-
-%type <var_decl> var
-%type <entry_decl> entry_decl
-%type <func_decl> func_decl
-
-%type <op_list> body
-%type <op_list> operator_list
-
-%type <op> operator
+%type <DeclAST> var entry_decl func_decl
+%type <OperatorAST_list> body
+%type <OperatorAST_list> operator_list
 
 %type <strings> params_list
 
-%type <assign> assignment
-%type <return_> return_statement
-%type <expr_stmt> expr_statement
-%type <expr> expr
-
-%type <term> t
-%type <factor> f
-%type <p> p
+%type <OperatorAST> operator assignment return_statement 
+%type <ExprAST> expr t f p
 
 %%
 
@@ -90,14 +60,14 @@ program:
     decls ';' { ast_root = new ProgramAST(*$1); }
 
 decls: 
-      decls ';' decl    { all($1,$3); $$ = $1; } 
+      decls ';' decl    { $1->insert($1->end(), $3->begin(), $3->end()); $$ = $1; } 
     | decl              { $$ = $1; }
     | %empty            { $$ = new vector<DeclAST*>(); }
 
 decl: 
-      var_decl      { $$ = (vector<DeclAST*>*)$1;  } 
-    | func_decl     { $$ = make_vec((DeclAST*)$1); } 
-    | entry_decl    { $$ = make_vec((DeclAST*)$1); }
+      var_decl
+    | func_decl     { $$ = new vector<DeclAST*>({$1}); } 
+    | entry_decl    { $$ = new vector<DeclAST*>({$1}); }
 
 var_decl: 
     "var" var_list { $$ = $2; }
@@ -110,7 +80,7 @@ var_list:
     } 
     | var 
     { 
-        $$ = make_vec($1);
+        $$ = new vector<DeclAST*>({$1});
     }
 
 var: 
@@ -125,10 +95,16 @@ entry_decl:
         $$ = new EntryAST(*$3); 
     }
 
-func_decl: 
+func_decl:
     "func" IDENT params_list body 
     {
         $$ = new FuncAST(*$2, *$3, *$4);
+    }
+
+params_list: 
+    '(' ')'
+    {
+        $$ = new vector<string>();
     }
 
 body:
@@ -145,7 +121,7 @@ operator_list:
         }
         | operator 
         { 
-            $$ = make_vec($1); 
+            $$ = new vector<OperatorAST*>({$1});
         }
         | %empty 
         { 
@@ -153,109 +129,67 @@ operator_list:
         }
 
 operator: 
-        assignment 
-        { 
-            $$ = (OperatorAST*)$1;
-        } 
+          assignment 
         | return_statement 
-        { 
-            $$ = (OperatorAST*)$1;
-        }
-        | expr_statement
-        { 
-            $$ = (OperatorAST*)$1;
-        }
-
-params_list: 
-    '(' ')'
-    {
-        $$ = new vector<string>();
-    }
+        | expr { $$ = $1; }
 
 assignment: 
     IDENT '=' expr 
     {
-        $$ = new AssignStatementAST(*$1,$3);
+        $$ = new AssignAST(*$1,$3);
     }
 
 return_statement: 
     "return" expr 
     {
-        $$ = new ReturnStatementAST($2);
-    }
-
-expr_statement: 
-    expr
-    {
-        $$ = new ExprStatementAST($1);
+        $$ = new ReturnAST($2);
     }
 
 expr:   
-    t '+' expr  
+       t '+' expr  
     {
-        $3->terms.push_back($1);
-        $3->signs.push_back('+'); 
-        $$ = $3; 
+        $$ = new BinaryOpExprAST('+', $1, $3); 
     }
     |  t '-' expr  
     {
-        $3->terms.push_back($1);
-        $3->signs.push_back('-'); 
-        $$ = $3;
+        $$ = new BinaryOpExprAST('-', $1, $3); 
     }
-    |  t 
-    {
-        auto e = new ExprAST();
-        e->terms.push_back($1);
-        $$ = e;
-    }
+    |  t
 
 t:   
     f '*' t  
     { 
-        $3->factors.push_back($1); 
-        $3->signs.push_back('*'); 
-        $$ = $3; 
+        $$ = new BinaryOpExprAST('*', $1, $3);
     }
     |  f '/' t 
     { 
-        $3->factors.push_back($1); 
-        $3->signs.push_back('/'); 
-        $$ = $3; 
+        $$ = new BinaryOpExprAST('/', $1, $3);
     }
-    |  f 
-    { 
-        auto t = new TermAST();
-        t->factors.push_back($1);
-        $$ = t;
-    }
+    |  f
 
 f: 
     '-' p  
     { 
-        $$ = new FactorAST('-', $2); 
+        $$ = new UnaryOpExprAST('-', $2);
     }
-    |  p   
-    { 
-        $$ = new FactorAST('+', $1);
-    }
+    |  p
 
 p:   
-      IDENT 
+     IDENT 
     { 
-        $$ = (PAST*) new IdentAST(*$1); 
+        $$ = new VariableAST(*$1); 
     } 
     | NUMBER 
     { 
-        $$ = (PAST*) new NumberAST($1); 
+        $$ = new NumberAST($1); 
     }
     | IDENT '(' ')' 
     { 
-        $$ = (PAST*) new FCallAST(*$1); 
+        $$ = new FCallAST(*$1); 
     }
     | '(' expr ')' 
     { 
-        $$ = (PAST*) new InnerExprAST($2); 
+        $$ = $2; 
     }
 
 %%
