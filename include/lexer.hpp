@@ -5,7 +5,7 @@
 #if !defined(yyFlexLexerOnce)
 #include <FlexLexer.h>
 #endif
-#include <location.hh>
+#include <location.hpp>
 
 union ValueType {
     std::string* ident_val;

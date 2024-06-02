@@ -1,59 +1,44 @@
-TEST_DIR 		= ./test
-SRC_DIR 		= src
-BUILD_DIR 		= build
-INCLUDE_DIR 	= include
-PARSER_SRC 		= ${SRC_DIR}/parser.y
-LEXER_SRC 		= ${SRC_DIR}/lexer.l
-LEXER_OUT 		= ${BUILD_DIR}/lex.yy.cc
-PARSER_OUT_H	= ${BUILD_DIR}/parser.tab.hh
-PARSER_OUT		= ${BUILD_DIR}/parser.tab.cc
-PROG			= ${BUILD_DIR}/prog
+TEST_DIR 			= ./test
+SRC_DIR 			= src
+BUILD_DIR 			= build
+INCLUDE_DIR 		= include
+AUTO_INCLUDE_DIR 	= build/include
 
-lexer.l = ${SRC_DIR}/lexer.l
-parser.y = ${SRC_DIR}/parser.y
-lex.yy.cc = ${BUILD_DIR}/lex.yy.cc
-lex.yy.o = ${BUILD_DIR}/lex.yy.o
-parser.tab.cpp = ${BUILD_DIR}/parser.tab.cpp
-parser.tab.hpp = ${BUILD_DIR}/parser.tab.hpp
-parser.tab.o = ${BUILD_DIR}/parser.tab.o
-lexer.hpp = ${INCLUDE_DIR}/lexer.hpp
-parser.hpp = ${INCLUDE_DIR}/parser.hpp
-main.o = ${BUILD_DIR}/main.o
-main.cpp = ${SRC_DIR}/main.cpp
-prog = ${BUILD_DIR}/prog
+LLVM_BIN_DIR    = $(shell brew --prefix llvm)/bin
+COMPILER		= clang++
+BISON_FLAGS		= -Wconflicts-sr -Wconflicts-rr -Wcounterexamples
+LLVM_FLAGS		= $(shell ${LLVM_BIN_DIR}/llvm-config --cxxflags --ldflags --system-libs --libs core)
+OTHER_FLAGS 	= -w -Wc++11-extensions -fcolor-diagnostics -fansi-escape-codes
 
-GCC_FLAGS = -w -Wc++11-extensions
+FLEX_CPP		= build/src/lex.yy.cpp
+BISON_HPP		= build/include/parser.tab.hpp build/include/location.hpp
+BISON_CPP 		= build/src/parser.tab.cpp
+BASE_CPP 		= $(wildcard src/*.cpp)
+BASE_HPP		= $(wildcard include/*.hpp)
 
-lexer_src: ${lexer.l}
-	flex -o ${lex.yy.cc} ${lexer.l}
+CPP 			= ${BASE_CPP} ${FLEX_CPP} ${BISON_CPP}
+HPP				= ${BASE_HPP} ${BASE_HPP}
 
-parser_src: ${parser.y}
-	bison -Wconflicts-sr -Wconflicts-rr -Wcounterexamples -H${parser.tab.hpp} -o${parser.tab.cpp} ${parser.y};
+build/prog: ${CPP} ${HPP}
+	${COMPILER} -g -O3 ${LLVM_FLAGS} -I${INCLUDE_DIR} -I${AUTO_INCLUDE_DIR} ${CPP} -o build/prog
 
-lex.yy.o:
-	g++ -c ${lex.yy.cc} -I${INCLUDE_DIR} -I${BUILD_DIR} -o ${lex.yy.o} ${GCC_FLAGS}
+${FLEX_CPP}: src/lexer.l
+	flex -o build/src/lex.yy.cpp $<
 
-parser.tab.o:
-	g++ -c ${parser.tab.cpp} -I${INCLUDE_DIR} -I${BUILD_DIR} -o ${parser.tab.o} ${GCC_FLAGS}
+${BISON_CPP} ${BISON_HPP}: src/parser.y
+	bison ${BISON_FLAGS} -Hbuild/include/parser.tab.hpp -o build/src/parser.tab.cpp $<; \
+	mv build/src/location.hpp build/include
 
-main.o:
-	g++ -c ${main.cpp} -I${INCLUDE_DIR} -I${BUILD_DIR} -o ${main.o} ${GCC_FLAGS}
-
-prog: main.o parser.tab.o lex.yy.o
-	g++ ${main.o} ${parser.tab.o} ${lex.yy.o} -o ${prog}
-
-build: mkdir parser_src lexer_src prog
-
-run: 
-	./${PROG} ${I}
+run: build/prog
+	./build/prog ${I}
 
 # make run I=test/1
 
-crun: build run
+.PHONY: mkdir clean run
 
 mkdir:
-	mkdir -p build
-
-.PHONY: clean
+	mkdir -p build/src; \
+	mkdir -p build/include
+	
 clean:
 	rm -r build

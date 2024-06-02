@@ -9,6 +9,7 @@
 }
 
 %locations
+%define api.location.file "location.hpp"
 
 %parse-param {ProgramAST* &ast_root}
 

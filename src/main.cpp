@@ -1,5 +1,6 @@
 #include "parser.tab.hpp"
 #include "lexer.hpp"
+#include "builder.hpp"
 #include "ast.hpp"
 #include <string>
 #include <fstream>
@@ -18,8 +19,6 @@ int main(int argc, char** argv)
     ProgramAST* root = 0;
     yy::parser parser(root, lexer);
     parser();
-
-    // * op = (ExprAST)((FuncAST*)(root->decls[0]))->body[0];
 
     std::cout << root << std::endl;
     return 0;
