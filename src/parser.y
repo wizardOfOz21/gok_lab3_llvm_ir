@@ -87,18 +87,21 @@ var:
     IDENT '=' expr 
     { 
         $$ = new VarAST(*$1, $3);
+        delete $1;
     }
 
 entry_decl: 
     "entry" '=' IDENT 
     { 
         $$ = new EntryAST(*$3); 
+        delete $3;
     }
 
 func_decl:
     "func" IDENT params_list body 
     {
         $$ = new FuncAST(*$2, *$3, *$4);
+        delete $2;
     }
 
 params_list: 
@@ -137,6 +140,7 @@ assignment:
     IDENT '=' expr 
     {
         $$ = new AssignAST(*$1,$3);
+        delete $1;
     }
 
 return_statement: 
@@ -177,7 +181,8 @@ f:
 p:   
      IDENT 
     { 
-        $$ = new VariableAST(*$1); 
+        $$ = new VariableAST(*$1);
+        delete $1;
     } 
     | NUMBER 
     { 
@@ -186,6 +191,7 @@ p:
     | IDENT '(' ')' 
     { 
         $$ = new FCallAST(*$1); 
+        delete $1;
     }
     | '(' expr ')' 
     { 

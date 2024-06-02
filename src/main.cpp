@@ -16,10 +16,13 @@ int main(int argc, char** argv)
     std::fstream input_stream(name);
     FooLexer lexer(input_stream, 1);
 
+    init();
     ProgramAST* root = 0;
     yy::parser parser(root, lexer);
     parser();
 
-    std::cout << root << std::endl;
+    root->declare();
+
+    // TheModule->print(outs(), nullptr);
     return 0;
 }

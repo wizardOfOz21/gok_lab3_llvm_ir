@@ -1,9 +1,12 @@
+var a = 5, b = 6;
+
 func bar() {
     foo();
 };
 
 func foo() {
-    a = (1 + b)/3 * 4 + fo();
+    {*a = (1 + b)/3 * 4 + fo();*}
+    a = 2 * - 5;
 	return 2;
 };
 
