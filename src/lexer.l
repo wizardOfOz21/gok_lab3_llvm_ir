@@ -37,6 +37,9 @@ func      return token::_FUNC_;
 var       return token::_VAR_;
 entry     return token::_ENTRY_;
 return    return token::_RETURN_;
+if        return token::_IF_;
+else      return token::_ELSE_;
+while      return token::_WHILE_;
 
 \{\*.*\*\}
 

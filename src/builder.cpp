@@ -3,18 +3,20 @@
 unique_ptr<LLVMContext> TheContext;
 unique_ptr<Module> TheModule;
 unique_ptr<IRBuilder<>> Builder;
-map<std::string, AllocaInst *> NamedValues;
 unique_ptr<FunctionPassManager> TheFPM;
 unique_ptr<LoopAnalysisManager> TheLAM;
 unique_ptr<FunctionAnalysisManager> TheFAM;
 unique_ptr<CGSCCAnalysisManager> TheCGAM;
 unique_ptr<ModuleAnalysisManager> TheMAM;
 
+snapshot NamedValues;
+vector<snapshot> snapshots;
+
 Function *MainFunc;
 string entry_function_name = "";
 string main_func_name = "forty_two";
 
-void init()
+void init(bool enable_optimizations)
 {
     TheContext = make_unique<LLVMContext>();
     TheModule = make_unique<Module>("LLang", *TheContext);
@@ -26,18 +28,17 @@ void init()
     TheMAM = std::make_unique<ModuleAnalysisManager>();
     MainFunc = CreateMainFunction();
 
-    // Устанавливаем оптимизации
-    // Promote allocas to registers.
-    // Add transform passes.
-    // Do simple "peephole" optimizations and bit-twiddling optzns.
-    TheFPM->addPass(InstCombinePass());
-    // Reassociate expressions.
-    TheFPM->addPass(ReassociatePass());
-    // Eliminate Common SubExpressions.
-    TheFPM->addPass(GVNPass());
-    // Simplify the control flow graph (deleting unreachable blocks, etc).
-    TheFPM->addPass(SimplifyCFGPass());
-    ///
+    if (enable_optimizations)
+    {
+        // Устанавливаем оптимизации
+        TheFPM->addPass(PromotePass());
+        TheFPM->addPass(DCEPass());
+        // TheFPM->addPass(InstCombinePass());
+        // TheFPM->addPass(ReassociatePass());
+        // TheFPM->addPass(GVNPass());
+        // TheFPM->addPass(SimplifyCFGPass());
+        ///
+    }
 
     PassBuilder PB;
     PB.registerModuleAnalyses(*TheMAM);

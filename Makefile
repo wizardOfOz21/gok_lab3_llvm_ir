@@ -33,7 +33,7 @@ run: build/prog
 	./build/prog ${I}
 
 out: build/prog
-	@./build/prog input > output 
+	@./build/prog input > output ${ARGS} 
 # @ в начале говорит не выводить сами команды
 
 print:

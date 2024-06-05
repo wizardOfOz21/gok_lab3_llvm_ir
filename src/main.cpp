@@ -4,6 +4,8 @@
 #include "ast/program.hpp"
 #include <string>
 #include <fstream>
+#include <error.hpp>
+#include <utils.hpp>
 
 int main(int argc, char** argv)
 {
@@ -12,22 +14,35 @@ int main(int argc, char** argv)
         return 0;
     }
 
+    bool enable_optimizations = false;
+    if (argc > 2) {
+        enable_optimizations = true;
+    }
+
     std::string name(argv[1]);
     std::fstream input_stream(name);
     FooLexer lexer(input_stream, 1);
 
-    init();
+    init(enable_optimizations);
     ProgramAST* root = 0;
     yy::parser parser(root, lexer);
     parser();
 
-    if (!root->declare()) {
-        LogErrorV("Не получилось ):");
+    try {
+        root->declare();
+        root->codegen();
+    } catch (DeclareExeption e) {
+        std::cout << "Ошибка объявления (:" << std::endl;
         return 0;
-    };
+    } catch (CodegenExeption e) {
+        std::cout << "Ошибка кодогенерации (:" << std::endl;
+        return 0;
+    } catch (std::exception e) {
+        std::cout << "Непредвиденная ошибка (:" << std::endl;
+        return 0;
+    }
 
-    root->codegen();
-
+    std::cout << "Кодогенерация прошла успешно" << std::endl;
     TheModule->print(outs(), nullptr);
     return 0;
 }

@@ -1,24 +1,19 @@
-var a = 5, b = 6;
-
-func bar() {
-    foo();
-};
-
-func foo() {
-    a = (1 + b)/3 * 4 + foo();
-    a = 2 * - 5;
-	return 2;
-};
-
-var c = a;
-var c = 18;
-
 {* это комментарий! *}
 
+entry = main;
+
+var a = 1;
+
 func main() {
-	foo();
-	bar();
-	return 0;
+
+    var a = 6;
+
+    while (5) {
+        var a = 7;
+        var c = a + 15 / 18 * ((11));
+    };
+
+    var b = a;
+	return 1;
 };
 
-entry = main;

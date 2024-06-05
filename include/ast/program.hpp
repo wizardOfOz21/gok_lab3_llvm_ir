@@ -3,6 +3,7 @@
 #include <vector>
 #include "decl.hpp"
 #include "builder.hpp"
+#include "error.hpp"
 
 using std::vector;
 class ProgramAST
@@ -21,33 +22,29 @@ public:
 
     // проходит по дереву и собирает прототипы функций
     // и инициализирует переменные
-    bool declare()
+    void declare()
     {
         Builder->SetInsertPoint(&MainFunc->getEntryBlock());
 
         for (auto decl : decls)
         {
-            if (!decl->signup())
-            {
-                return false;
-            }
+            decl->signup();
         }
 
         if (entry_function_name.compare("") == 0) {
             std::cout << "Не была объявлена точка входа, используйте entry = <имя функции>" << std::endl;
-            return false;
+            throw DeclareExeption();
         }
 
         Function* entry_func = TheModule->getFunction(entry_function_name);
 
         if (!entry_func) {
             std::cout << "Точка входа не найдена" << std::endl;
-            return false;
+            throw DeclareExeption();
         }
 
         Value* ret_val = Builder->CreateCall(entry_func, {}, "mainrettmp");
         Builder->CreateRet(ret_val);
-        return true;
     }
 
     void codegen()
