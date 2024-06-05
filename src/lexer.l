@@ -41,6 +41,6 @@ return    return token::_RETURN_;
 \{\*.*\*\}
 
 [0-9]+                  { ((ValueType*)yylval)->num_val = std::stoi(std::string(yytext, yytext + yyleng)); }   return token::NUMBER;
-[a-zA-Z][a-zA-Z0-9]*    { ((ValueType*)yylval)->ident_val = new std::string(yytext, yytext + yyleng); }        return token::IDENT;
+[a-zA-Z][a-zA-Z0-9_]*    { ((ValueType*)yylval)->ident_val = new std::string(yytext, yytext + yyleng); }        return token::IDENT;
 
 .   {return *yytext; }

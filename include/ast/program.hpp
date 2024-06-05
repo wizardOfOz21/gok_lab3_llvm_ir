@@ -24,6 +24,7 @@ public:
     bool declare()
     {
         Builder->SetInsertPoint(&MainFunc->getEntryBlock());
+
         for (auto decl : decls)
         {
             if (!decl->signup())
@@ -31,10 +32,29 @@ public:
                 return false;
             }
         }
+
+        if (entry_function_name.compare("") == 0) {
+            std::cout << "Не была объявлена точка входа, используйте entry = <имя функции>" << std::endl;
+            return false;
+        }
+
+        Function* entry_func = TheModule->getFunction(entry_function_name);
+
+        if (!entry_func) {
+            std::cout << "Точка входа не найдена" << std::endl;
+            return false;
+        }
+
+        Value* ret_val = Builder->CreateCall(entry_func, {}, "mainrettmp");
+        Builder->CreateRet(ret_val);
         return true;
     }
 
     void codegen()
     {
+        for (auto decl : decls)
+        {
+            decl->codegen();
+        }
     }
 };

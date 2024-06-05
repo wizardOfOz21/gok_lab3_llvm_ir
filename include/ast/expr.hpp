@@ -2,19 +2,18 @@
 
 #include <vector>
 #include <string>
-#include "operator.hpp"
 #include "builder.hpp"
 
 using std::string;
 using std::vector;
 
-class ExprAST : public OperatorAST
+class ExprAST
 {
 public:
     virtual ~ExprAST() {}
     virtual Value *codegen() {};
-    virtual bool has_refs() {};
-    virtual bool has_calls() {};
+    virtual bool has_refs() { return false; };
+    virtual bool has_calls() { return false; };
 };
 
 class FCallAST : public ExprAST
@@ -25,8 +24,21 @@ public:
     FCallAST(const string &name)
         : name(name) {}
 
-    bool has_refs() {return false;}
-    bool has_calls() {return true;}
+    bool has_calls() { return true; }
+
+    Value *codegen()
+    {
+        Function *F = TheModule->getFunction(name);
+
+        if (!F)
+        {
+            in_func_name_print();
+            std::cout << "Ссылка на несуществующую функцию: " << name << std::endl;
+            return nullptr;
+        }
+
+        return Builder->CreateCall(F, {}, "fcalltmp");
+    }
 };
 
 class VariableAST : public ExprAST
@@ -37,18 +49,20 @@ public:
     VariableAST(const string &name)
         : name(name) {}
 
-    bool has_refs() {return true;}
-    bool has_calls() {return false;}
+    bool has_refs() { return true; }
 
     Value *codegen()
     {
-        AllocaInst *val = NamedValues[name];
-        if (!val)
+        AllocaInst *var_alloca = NamedValues[name];
+
+        if (!var_alloca)
         {
-            return LogErrorV("Unknown variable name");
+            in_func_name_print();
+            std::cout << "Ссылка на несуществующую переменную: " << name << std::endl;
+            return nullptr;
         }
 
-        return Builder->CreateLoad(val->getAllocatedType(), val, name.c_str());
+        return Builder->CreateLoad(var_alloca->getAllocatedType(), var_alloca, name.c_str());
     }
 };
 
@@ -59,9 +73,6 @@ public:
 
     NumberAST(int val)
         : val(val){};
-
-    bool has_refs() {return false;}
-    bool has_calls() {return false;}
 
     Value *codegen()
     {
@@ -78,8 +89,8 @@ public:
     UnaryOpExprAST(char op, ExprAST *arg)
         : op(op), arg(arg) {}
 
-    bool has_refs() {return arg->has_refs();}
-    bool has_calls() {return arg->has_calls();}
+    bool has_refs() { return arg->has_refs(); }
+    bool has_calls() { return arg->has_calls(); }
 
     ~UnaryOpExprAST()
     {
@@ -91,6 +102,8 @@ public:
         Value *expr_value = arg->codegen();
         if (!expr_value)
         {
+            in_func_name_print();
+            std::cout << "Аргумент унарного оператора не вычислился: " << op << std::endl;
             return nullptr;
         }
         switch (op)
@@ -113,8 +126,8 @@ public:
     BinaryOpExprAST(char op, ExprAST *lhs, ExprAST *rhs)
         : op(op), lhs(lhs), rhs(rhs) {}
 
-    bool has_refs() {return lhs->has_refs() && rhs->has_refs();}
-    bool has_calls() {return lhs->has_calls() && rhs->has_calls();}
+    bool has_refs() { return lhs->has_refs() && rhs->has_refs(); }
+    bool has_calls() { return lhs->has_calls() && rhs->has_calls(); }
 
     ~BinaryOpExprAST()
     {
@@ -129,6 +142,8 @@ public:
 
         if (!lhs_val || !rhs_val)
         {
+            in_func_name_print();
+            std::cout << "Правый или левый аргумент бинарного оператора не вычислился: " << op << std::endl;
             return nullptr;
         }
 

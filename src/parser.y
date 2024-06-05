@@ -134,7 +134,7 @@ operator_list:
 operator: 
           assignment 
         | return_statement 
-        | expr { $$ = $1; }
+        | expr { $$ = new ExprOperatorAST($1); }
 
 assignment: 
     IDENT '=' expr 

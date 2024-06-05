@@ -3,7 +3,7 @@
 #include <vector>
 #include <string>
 
-#include "expr.hpp"
+#include "operator.hpp"
 
 using std::string;
 using std::vector;
@@ -12,7 +12,8 @@ class DeclAST
 {
 public:
     virtual ~DeclAST(){};
-    virtual bool signup() {};
+    virtual bool signup() { return false; };
+    virtual void codegen() {};
 };
 
 class VarAST : public DeclAST
@@ -28,7 +29,9 @@ public:
     {
         if (val->has_calls())
         {
-            return LogErrorV("Нельзя использовать вызовы функций при инициализации переменной");
+            std::cout << "Нельзя использовать вызовы функций при инициализации переменной: "
+                      << name << std::endl;
+            return false;
         }
 
         // TODO: сделать возможным объявлять переменные через другие переменные, которые встречаются позже
@@ -38,7 +41,19 @@ public:
 
         if (!init_val)
         {
+            std::cout << "Переменная, по-видимому, ссылается на не объявленную переменную, но это не точно: "
+                      << name << std::endl;
             return false;
+        }
+
+        Value *old_alloca = NamedValues[name];
+
+        if (old_alloca)
+        {
+            std::cout << "Переменная \"" << name
+                      << "\" уже объявлена, новое значение заменит старое, будьте осторожны" << std::endl;
+            Builder->CreateStore(init_val, old_alloca);
+            return true;
         }
 
         AllocaInst *alloca = CreateEntryBlockAlloca(MainFunc, name);
@@ -70,21 +85,71 @@ public:
         std::vector<Type *> Ints(0, Type::getInt32Ty(*TheContext));
         FunctionType *FT =
             FunctionType::get(Type::getInt32Ty(*TheContext), Ints, false);
-        
-        if (!FT) {
-            LogErrorV("Неверный прототип функции");
+
+        if (!FT)
+        {
+            std::cout << "Неверный прототип функции: " << name << std::endl;
+            return false;
+        }
+
+        Function *old_F = TheModule->getFunction(name);
+
+        if (old_F)
+        {
+            std::cout << "Такая функция уже объявлена, либо это системная функция \"" << main_func_name << "\": " << name << std::endl;
             return false;
         }
 
         Function *F =
             Function::Create(FT, Function::ExternalLinkage, name, TheModule.get());
 
-        if (!F) {
-            LogErrorV("Не получилось создать функцию");
+        if (!F)
+        {
+            std::cout << "Не получилось создать функцию: " << name << std::endl;
             return false;
         }
 
         return true;
+    };
+
+    void codegen()
+    {
+        Function *F = TheModule->getFunction(name);
+
+        if (!F)
+        {
+            std::cout << "Функция не найдена при проходе кодогенератора: " << name << std::endl;
+            return;
+        }
+
+        if (!F->empty())
+        {
+            std::cout << "Найденная при проходе кодогенератора функция не пуста: " << name << std::endl;
+            return;
+        }
+
+        BasicBlock *BB = BasicBlock::Create(*TheContext, "entry", F);
+        Builder->SetInsertPoint(BB);
+
+        bool has_return = false;
+        for (auto op : body)
+        {
+            op->codegen();
+            if (op->is_return())
+            {
+                has_return = true;
+                break;
+            }
+        }
+
+        if (!has_return) {
+            auto ret_val = new NumberAST(0);
+            ReturnAST(ret_val).codegen();
+        }
+
+        verifyFunction(*F);
+
+        TheFPM->run(*F, *TheFAM);
     };
 
     ~FuncAST()
@@ -102,4 +167,10 @@ public:
     string name;
 
     EntryAST(const string &name) : name(name){};
+
+    bool signup()
+    {
+        entry_function_name = name;
+        return true;
+    }
 };

@@ -21,8 +21,13 @@ int main(int argc, char** argv)
     yy::parser parser(root, lexer);
     parser();
 
-    root->declare();
+    if (!root->declare()) {
+        LogErrorV("Не получилось ):");
+        return 0;
+    };
 
-    // TheModule->print(outs(), nullptr);
+    root->codegen();
+
+    TheModule->print(outs(), nullptr);
     return 0;
 }

@@ -1,0 +1,35 @@
+Переменная "c" уже объявлена, новое значение заменит старое, будьте осторожны
+; ModuleID = 'LLang'
+source_filename = "LLang"
+
+define i32 @forty_two() {
+entry:
+  %c = alloca i32, align 4
+  %a = alloca i32, align 4
+  store i32 5, ptr %a, align 4
+  %a1 = load i32, ptr %a, align 4
+  store i32 %a1, ptr %c, align 4
+  store i32 18, ptr %c, align 4
+  %mainrettmp = call i32 @main()
+  ret i32 %mainrettmp
+}
+
+define i32 @bar() {
+entry:
+  %tmp = call i32 @foo()
+  ret i32 0
+}
+
+define i32 @foo() {
+entry:
+  %fcalltmp = call i32 @foo()
+  store i32 -10, ptr %a, align 4
+  ret i32 2
+}
+
+define i32 @main() {
+entry:
+  %tmp = call i32 @foo()
+  %tmp3 = call i32 @bar()
+  ret i32 0
+}
